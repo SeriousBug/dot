@@ -1,12 +1,9 @@
 [helpers]
 
-[default]
-depends = []
+[bottom.files]
+"bottom/bottom.toml" = "~/.config/bottom/bottom.toml"
 
-[default.files]
-bootstrap = ""
+[git.files]
+"git/gitconfig" = "~/.gitconfig"
 
-[default.variables]
-
-[settings]
-default_target_type = "automatic"
+[system.variables]

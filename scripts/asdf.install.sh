@@ -23,6 +23,7 @@ echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
 
 # Install and activate asdf plugins
 PLUGINS=(
+  "air"
   "bat"
   "bottom"
   "bun"
