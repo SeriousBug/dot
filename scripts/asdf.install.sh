@@ -37,6 +37,7 @@ PLUGINS=(
   "neovim"
   "nodejs"
   "pnpm"
+  "ripgrep"
   "xh"
 )
 for PLUGIN in "${PLUGINS[@]}"; do
