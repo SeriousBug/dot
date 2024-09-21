@@ -9,6 +9,7 @@ echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
 
 # Setup fish
 mkdir -p ~/.config/fish
+echo 'set --export ASDF_DIR $HOME/.asdf'
 echo 'source ~/.asdf/asdf.fish' >> ~/.config/fish/config.fish
 mkdir -p ~/.config/fish/completions
 ln -s ~/.asdf/completions/asdf.fish ~/.config/fish/completions
