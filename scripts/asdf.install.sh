@@ -49,3 +49,13 @@ done
 
 #git clone --depth=1 https://github.com/mattmc3/antidote.git ${ZDOTDIR:-~}/.antidote
 
+# If Go is already installed on the system (e.g. Codespaces), the built-in
+# install interferes with the asdf install.
+unset GOPATH
+unset GOROOT
+echo "export GOPATH=$(go env GOPATH)" >> ~/.bashrc
+echo "export GOROOT=$(go env GOROOT)" >> ~/.bashrc
+echo "export GOPATH=$(go env GOPATH)" >> ~/.zshrc
+echo "export GOROOT=$(go env GOROOT)" >> ~/.zshrc
+echo "set --export GOPATH (go env GOPATH)" >> ~/.config/fish/config.fish
+echo "set --export GOROOT (go env GOROOT)" >> ~/.config/fish/config.fish
