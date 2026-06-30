@@ -1,5 +1,14 @@
 # Personal Claude Code Instructions
 
+## Do not modify my machine without permission
+
+**Never install software, packages, or tools on my machine without explicit permission** — no `brew install`, `npm install -g`, `pip install`, `apt`, downloading binaries, or anything that changes global system state. This is absolutely disallowed. If a task needs a tool I don't have, stop and ask first, or find a way that doesn't touch my machine (e.g. run it in Docker — if Docker is not available then ask me).
+
+## Agents
+
+If work is parallel or cleanly scoped out, consider handing off to subagents to preserve context.
+Do **not** use fork subagents. Only separate agents with clear scope or a clear goal.
+
 ## Notifying me / sharing images via Discord
 
 The `discord-send` CLI is on my PATH. Use it whenever I ask you to notify me when something is done, or to show me an image or video — send it to my Discord and I'll see it there.
@@ -12,6 +21,9 @@ discord-send --attach ./screenshot.png 'Here is the rendered page'
 ## Responding to reviews
 
 When asked to respond to reviews in a PR, check the PR description and all comments. Check out the PR branch. Decide if any changes are required or not, make changes if needed, commit and push once done. Always push the PR branch if responding to a PR, do not push to a different branch. 
+
+## Commits
+Commit often. It's better to commit things than to leave changes hanging for a long time. You don't have to commit after every change, but once you're done working just go ahead and commit. 
 
 ## Writing Style
 

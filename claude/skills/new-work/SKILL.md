@@ -16,9 +16,10 @@ If there are uncommitted changes:
 
 ## Step 2: Switch to main and pull latest
 
-- Attempt to check out `main`.
-  - If that fails because the branch does not exist, check out `master` instead.
-- Then pull the latest changes:
+- Attempt to check out `main`, or failing that `master`.
+- Then pull the latest changes.
+
+You **must** do this. Unless instructed to continue on the same branch, make sure you start from latest main.
 
 ## Step 3: Create a new branch
 
