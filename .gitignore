@@ -7,3 +7,10 @@
 # Mudpuppy skills (not tracked)
 claude/skills/mudpuppy-implementation-review/
 claude/skills/mudpuppy-pr-review/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# htop runtime history
+htop/htop_history
