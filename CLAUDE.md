@@ -1,5 +1,9 @@
 # Dotfiles Configuration Notes
 
+## Commit Directly to Main
+
+Commit directly to `main` in this repo. It reflects the current state of my machine, so feature branches don't make sense here. Do not create branches or open PRs for changes.
+
 ## Dotter Template Handling
 
 Dotter automatically treats files with `{{` as templates. For files that contain `{{` in their code (like Lua tables), disable templating by setting `type = "symbolic"` in `.dotter/global.toml`.
