@@ -1,0 +1,79 @@
+{
+  "includeCoAuthoredBy": false,
+  "attribution": {
+    "sessionUrl": false
+  },
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Willet__list_organizations",
+      "mcp__claude_ai_Willet__list_organization_members",
+      "mcp__claude_ai_Willet__list_projects",
+      "mcp__claude_ai_Willet__list_project_members",
+      "mcp__claude_ai_Willet__list_tasks",
+      "mcp__claude_ai_Willet__list_tags",
+      "mcp__claude_ai_Willet__search_tasks",
+      "mcp__claude_ai_Willet__get_task",
+      "mcp__claude_ai_Willet__get_task_graph",
+      "mcp__claude_ai_Willet__get_project_stats",
+      "mcp__claude_ai_Willet__render_dependency_graph",
+      "mcp__claude_ai_Willet__render_task_board",
+      "mcp__claude_ai_Willet__create_task",
+      "mcp__claude_ai_Willet__update_task",
+      "mcp__claude_ai_Willet__complete_task",
+      "mcp__claude_ai_Willet__cancel_task",
+      "mcp__claude_ai_Willet__reopen_task",
+      "mcp__claude_ai_Willet__start_task",
+      "mcp__claude_ai_Willet__link_tasks",
+      "mcp__claude_ai_Willet__unlink_tasks",
+      "mcp__claude_ai_Willet__add_comment"
+    ],
+    "defaultMode": "auto"
+  },
+  "worktree": {
+    "baseRef": "fresh"
+  },
+  "enableWorkflows": false,
+  "workflowKeywordTriggerEnabled": false,
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/ccline/ccline",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "honeycomb@honeycomb-plugins": true,
+    "caveman@caveman": false
+  },
+  "extraKnownMarketplaces": {
+    "mcp-apps": {
+      "source": {
+        "source": "github",
+        "repo": "modelcontextprotocol/ext-apps"
+      }
+    },
+    "honeycomb-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "honeycombio/agent-skill"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "medium",
+  "promptSuggestionEnabled": false,
+  "awaySummaryEnabled": false,
+  "showClearContextOnPlanAccept": true,
+  "tui": "fullscreen",
+  "autoMemoryEnabled": false,
+  "editorMode": "vim",
+  "fileCheckpointingEnabled": false,
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
+}
