@@ -124,6 +124,48 @@ def resolve_latest():
     return latest
 
 
+# A compacted session's log records the cc-compact run it did on its own
+# predecessor: the helper command (carrying --id/--file) and the report it
+# printed (whose <file> tag and "Auto-selected" line hold the resolved absolute
+# path). Following those references walks the /clear -> cc-compact lineage back.
+_ANCESTOR_PATH_RES = [
+    re.compile(r"Auto-selected latest session:\s*(\S+\.jsonl)"),
+    re.compile(r"<file>([^<]+\.jsonl)</file>"),
+    re.compile(r"compact_session\.py[^\n\"]*?--file[= ]+(\S+\.jsonl)"),
+]
+_ANCESTOR_ID_RE = re.compile(r"compact_session\.py[^\n\"]*?--id[= ]+([0-9a-fA-F-]{36})")
+
+
+def find_ancestor(path, visited):
+    """Return the session log `path` was compacted from, or None.
+
+    Scans for references to another session and returns the first that resolves
+    to an existing file not already in `visited` (guards against cycles)."""
+    self_real = os.path.realpath(path)
+    try:
+        fh = open(path, encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    with fh:
+        for line in fh:
+            if "compact_session.py" not in line and "<file>" not in line and "Auto-selected" not in line:
+                continue
+            candidates = []
+            for pat in _ANCESTOR_PATH_RES:
+                candidates += pat.findall(line)
+            for sid in _ANCESTOR_ID_RE.findall(line):
+                candidates += glob.glob(os.path.join(PROJECTS_DIR, "**", f"{sid}.jsonl"), recursive=True)
+            for cand in candidates:
+                cand = os.path.expanduser(cand)
+                if not os.path.isfile(cand):
+                    continue
+                real = os.path.realpath(cand)
+                if real == self_real or real in visited:
+                    continue
+                return cand
+    return None
+
+
 def resolve_file(args):
     if args.latest:
         return resolve_latest()
@@ -187,12 +229,70 @@ def main():
     ap.add_argument("--top-files", type=int, default=10, help="how many most-edited files")
     ap.add_argument("--maxlen", type=int, default=800, help="max chars per quoted message")
     ap.add_argument("--seed", type=int, default=1, help="seed for the middle random sample")
+    ap.add_argument("--max-depth", type=int, default=10,
+                    help="how many ancestor sessions to follow back through the "
+                         "/clear -> cc-compact chain (0 = just this session)")
+    ap.add_argument("--decay", type=float, default=0.6,
+                    help="per-depth shrink factor for every limit (tighter summaries deeper in the chain)")
     args = ap.parse_args()
     if not (args.file or args.id or args.title):
         args.latest = True
 
     path = resolve_file(args)
 
+    out = sys.stdout.write
+
+    # Walk the lineage: the requested session at depth 0, then each older
+    # session it was compacted from, summarized ever more tightly.
+    visited = {os.path.realpath(path)}
+    chain = [path]
+    cur = path
+    for _ in range(max(0, args.max_depth)):
+        anc = find_ancestor(cur, visited)
+        if not anc:
+            break
+        chain.append(anc)
+        visited.add(os.path.realpath(anc))
+        cur = anc
+
+    out(f'<compacted-session-chain sessions="{len(chain)}" '
+        'note="depth 0 is the session you asked for; deeper entries are older '
+        'sessions it was compacted from, summarized more tightly">\n')
+    for depth, p in enumerate(chain):
+        params = scale_params(args, depth)
+        summarize(p, depth, params, out)
+    out("</compacted-session-chain>\n")
+
+
+# Floors keep even the deepest summary useful without letting it grow.
+_FLOORS = {"first": 1, "last": 2, "middle": 0, "top_files": 3, "maxlen": 200, "final": 300, "tools": 3}
+_BASE_FINAL = 2000  # final-agent-message clip at depth 0
+_BASE_TOOLS = 8     # last-tool-calls shown at depth 0
+
+
+def scale_params(args, depth):
+    """Depth-0 uses the CLI limits; each deeper level multiplies every limit by
+    args.decay ** depth, floored so summaries stay non-empty."""
+    f = args.decay ** depth
+
+    def s(base, floor):
+        return max(floor, int(round(base * f)))
+
+    return {
+        "first": s(args.first, _FLOORS["first"]),
+        "last": s(args.last, _FLOORS["last"]),
+        "middle": s(args.middle, _FLOORS["middle"]),
+        "top_files": s(args.top_files, _FLOORS["top_files"]),
+        "maxlen": s(args.maxlen, _FLOORS["maxlen"]),
+        "final": s(_BASE_FINAL, _FLOORS["final"]),
+        "tools": s(_BASE_TOOLS, _FLOORS["tools"]),
+        "seed": args.seed,
+    }
+
+
+def summarize(path, depth, p, out):
+    """Load one session log and emit its bounded, XML-tagged report under a
+    <session depth="N"> element. `p` holds the per-depth limits."""
     turns = []            # conversational turns: {"prompt": str, "reply": [text,...]}
     edit_counts = {}      # file path -> edit count
     last_assistant_text = []  # final text blocks
@@ -251,16 +351,17 @@ def main():
     # sampled only from what's left between them. If the regions collide
     # (short session), the overlap is simply dropped.
     n = len(turns)
-    first_idx = list(range(min(args.first, n)))
-    last_start = max(len(first_idx), n - args.last)
+    first_idx = list(range(min(p["first"], n)))
+    last_start = max(len(first_idx), n - p["last"])
     last_idx = list(range(last_start, n))
     mid_pool = list(range(len(first_idx), last_start))
-    if args.seed is not None:
-        random.seed(args.seed)
-    mid_idx = sorted(random.sample(mid_pool, min(args.middle, len(mid_pool))))
+    if p["seed"] is not None:
+        random.seed(p["seed"])
+    mid_idx = sorted(random.sample(mid_pool, min(p["middle"], len(mid_pool))))
 
     # ---- emit a bounded, XML-tagged report (newlines preserved) ----
-    out = sys.stdout.write
+    role = "requested" if depth == 0 else "ancestor"
+    out(f'\n<session depth="{depth}" role="{role}">\n')
 
     out("<session-summary>\n")
     out(f"  <file>{esc(path)}</file>\n")
@@ -279,9 +380,9 @@ def main():
             t = turns[i]
             reply = "\n".join(t["reply"]).strip()
             out(f'  <exchange n="{i + 1}">\n')
-            out(f"    <user>\n{clip(t['prompt'], args.maxlen)}\n    </user>\n")
+            out(f"    <user>\n{clip(t['prompt'], p['maxlen'])}\n    </user>\n")
             if reply:
-                out(f"    <agent>\n{clip(reply, args.maxlen)}\n    </agent>\n")
+                out(f"    <agent>\n{clip(reply, p['maxlen'])}\n    </agent>\n")
             else:
                 out("    <agent note=\"no text reply — tool calls only\" />\n")
             out("  </exchange>\n")
@@ -291,19 +392,21 @@ def main():
     emit_exchanges("sampled-middle", mid_idx)
     emit_exchanges("last", last_idx)
 
-    out(f'\n<most-edited-files top="{args.top_files}">\n')
-    for fp, c in sorted(edit_counts.items(), key=lambda kv: -kv[1])[: args.top_files]:
+    out(f'\n<most-edited-files top="{p["top_files"]}">\n')
+    for fp, c in sorted(edit_counts.items(), key=lambda kv: -kv[1])[: p["top_files"]]:
         out(f'  <file edits="{c}">{esc(fp)}</file>\n')
     out("</most-edited-files>\n")
 
     out("\n<last-tool-calls>\n")
-    for name, arg in recent_tools[-8:]:
+    for name, arg in recent_tools[-p["tools"]:]:
         out(f'  <call tool="{esc(name)}">{esc(arg)}</call>\n')
     out("</last-tool-calls>\n")
 
     out("\n<final-agent-message>\n")
-    out(clip("\n".join(last_assistant_text), 2000) + "\n")
+    out(clip("\n".join(last_assistant_text), p["final"]) + "\n")
     out("</final-agent-message>\n")
+
+    out("</session>\n")
 
 
 if __name__ == "__main__":

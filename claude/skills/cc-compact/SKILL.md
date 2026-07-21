@@ -44,7 +44,8 @@ python3 ~/.claude/skills/cc-compact/compact_session.py --title "the session name
 
 ## Step 2: Read the output
 
-It prints a bounded, XML-tagged report:
+Everything is wrapped in a `<compacted-session-chain>` element containing one or
+more `<session depth="N">` blocks. Each block is a bounded, XML-tagged report:
 
 - header: project, git branch, time span, record/prompt counts
 - the first few exchanges (user prompt + the agent's reply) — the original intent
@@ -53,6 +54,14 @@ It prints a bounded, XML-tagged report:
 - the most-edited files, ranked by edit count
 - the last several tool calls — what the agent was physically doing last
 - the final assistant message — what it was saying / waiting on last
+
+`depth="0"` (`role="requested"`) is the session you asked for. If that session
+was itself resumed from an earlier one via `/clear` → cc-compact, the script
+follows that lineage backwards and emits each older session at `depth="1"`, `2`,
+… (`role="ancestor"`), summarized more tightly at each step so the total stays
+bounded. It walks up to `--max-depth` ancestors (default 10) and guards against
+cycles. Read the deeper blocks as fading background: the further back, the
+terser. You do not need to do anything to trigger this — it happens on its own.
 
 ## Step 3: Pick up the work
 
