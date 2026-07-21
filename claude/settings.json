@@ -1,8 +1,8 @@
 {
-  "includeCoAuthoredBy": false,
   "attribution": {
     "sessionUrl": false
   },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "mcp__claude_ai_Willet__list_organizations",

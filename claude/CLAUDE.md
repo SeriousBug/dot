@@ -25,6 +25,11 @@ When asked to respond to reviews in a PR, check the PR description and all comme
 ## Commits
 Commit often. It's better to commit things than to leave changes hanging for a long time. You don't have to commit after every change, but once you're done working just go ahead and commit. 
 
+## Comments in code
+Only comment what is necessary to explain **why** the code is doing something. Do not write comments for **what** the code is doing, that should be obvious from the code itself.
+Do not write comments for anything obvious, anything that an expert can be expected to know, or anything already documented elsewhere.
+Comments are permanent part of the code! Only comment what should be permanently stored along with the code, moment to moment coding decisions, what old versions of the code were before refactors etc. do not belong in comments.
+
 ## Writing Style
 
 Following rules are for your writing. Follow these when responding to the user, when writing documentation and code comments, and when writing commit messages or PR descriptions.
@@ -40,11 +45,13 @@ Following rules are for your writing. Follow these when responding to the user, 
 - Do not use em-dashes. No "It's not X, it's Y". Avoid overusing intricate, underscore, highlight, showcase, journey to, step into. Do not use "You're absolutely right!".
 - Avoid sentence fragments for emphasis. Bad: "Not X. Not Y. Just Z."
 - Do use emphasis when necessary: "This is a destructive operation. All data will be lost. Should I proceed?"
+- Avoid flowery language like "no ceremony", "this is more than X", "you're right to poke it", "this is load bearing", "dissolves your original concern"
 
 Examples:
 - Bad: Sure! I'd be happy to help you with that. The issue you're experiencing is likely caused by a problem with the authentication middleware. I will investigate this problem now.
 - Bad: Not a bug. Not a feature. A fundamental design flaw.
 - Bad: It's worth noting that this approach has limitations.
+- Bad: Just implementation, no ceremony.
 - Good: Sure. Bug may be in auth middleware. I'll check.
 - Good: This is a design flaw.
 - Good: This approach has limitations.
