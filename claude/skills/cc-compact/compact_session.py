@@ -18,6 +18,10 @@ Session resolution (pick one):
   --id UUID          find <UUID>.jsonl under the projects dir
   --title TEXT       find the session whose ai-title contains TEXT
                      (case-insensitive substring; newest match wins)
+  --latest           the most recently active session in the current project,
+                     excluding the caller's own session — this is the default
+                     when no selector is given, so `cc-compact` right after
+                     `/clear` picks up the session you just cleared
 
 Sessions live at: ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
 """
@@ -27,6 +31,7 @@ import glob
 import json
 import os
 import random
+import re
 import sys
 
 PROJECTS_DIR = os.path.expanduser("~/.claude/projects")
@@ -84,7 +89,45 @@ def is_genuine_prompt(rec):
     return not s.startswith(skip_prefixes)
 
 
+def current_session():
+    """(project_dir, session_id) for the session invoking this script.
+
+    Claude Code exports CLAUDE_CODE_SESSION_ID; its log lives at
+    <project_dir>/<id>.jsonl. Fall back to the encoded cwd when the env var is
+    missing (script run by hand outside a session). Either value may be None."""
+    sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    if sid:
+        matches = glob.glob(os.path.join(PROJECTS_DIR, "**", f"{sid}.jsonl"), recursive=True)
+        if matches:
+            return os.path.dirname(matches[0]), sid
+    # Claude Code encodes the cwd into the project dir name by replacing every
+    # non-alphanumeric char with a dash (/Users/kaan/Code/Veery -> -Users-kaan-Code-Veery).
+    encoded = re.sub(r"[^A-Za-z0-9]", "-", os.getcwd())
+    cand = os.path.join(PROJECTS_DIR, encoded)
+    return (cand if os.path.isdir(cand) else None), sid
+
+
+def resolve_latest():
+    """Newest session log in the current project, excluding the caller's own
+    session, so compacting right after `/clear` lands on the just-cleared one."""
+    project_dir, sid = current_session()
+    if project_dir:
+        pool = glob.glob(os.path.join(project_dir, "*.jsonl"))
+    else:
+        pool = glob.glob(os.path.join(PROJECTS_DIR, "**", "*.jsonl"), recursive=True)
+    if sid:
+        pool = [p for p in pool if os.path.basename(p) != f"{sid}.jsonl"]
+    if not pool:
+        sys.exit("No previous session found to compact in this project")
+    latest = max(pool, key=os.path.getmtime)
+    sys.stderr.write(f"Auto-selected latest session: {latest}\n")
+    return latest
+
+
 def resolve_file(args):
+    if args.latest:
+        return resolve_latest()
+
     if args.file:
         return os.path.expanduser(args.file)
 
@@ -131,10 +174,13 @@ def resolve_file(args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    g = ap.add_mutually_exclusive_group(required=True)
+    g = ap.add_mutually_exclusive_group()
     g.add_argument("--file", help="path to a session .jsonl")
     g.add_argument("--id", help="session UUID")
     g.add_argument("--title", help="substring of the session's ai-title")
+    g.add_argument("--latest", action="store_true",
+                   help="newest session in the current project, excluding the caller's own "
+                        "(the default when no selector is given)")
     ap.add_argument("--first", type=int, default=5, help="how many opening exchanges")
     ap.add_argument("--last", type=int, default=10, help="how many closing exchanges")
     ap.add_argument("--middle", type=int, default=5, help="how many exchanges randomly sampled from the middle")
@@ -142,6 +188,8 @@ def main():
     ap.add_argument("--maxlen", type=int, default=800, help="max chars per quoted message")
     ap.add_argument("--seed", type=int, default=1, help="seed for the middle random sample")
     args = ap.parse_args()
+    if not (args.file or args.id or args.title):
+        args.latest = True
 
     path = resolve_file(args)
 

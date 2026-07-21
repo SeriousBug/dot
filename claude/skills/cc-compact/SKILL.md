@@ -16,8 +16,13 @@ The helper script lives at `~/.claude/skills/cc-compact/compact_session.py`.
 
 ## Step 1: Resolve the session
 
-The argument is one of two forms:
+The argument is one of three forms:
 
+- **Nothing** — no id or title given. This is the common case: the user ran
+  `/clear` and then `cc-compact` to reload the session they just cleared. Run
+  the script with no selector; it auto-picks the most recently active session
+  in the current project, **excluding this session** (the fresh one `/clear`
+  created). This emulates Claude Code's built-in `/compact`.
 - **A session id** — when invoked like `/resume claude --resume <id>` or
   `cc-compact <id>`, the user already gave you the UUID. Pass it as `--id`.
 - **A session name / title** — free text. Pass it as `--title`; the script
@@ -27,6 +32,9 @@ The argument is one of two forms:
 Run the script exactly once with the matching form:
 
 ```sh
+# Latest session before the /clear (default, no selector):
+python3 ~/.claude/skills/cc-compact/compact_session.py
+
 # By id:
 python3 ~/.claude/skills/cc-compact/compact_session.py --id <session-uuid>
 
